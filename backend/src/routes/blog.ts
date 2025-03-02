@@ -2,8 +2,10 @@ import { Hono } from 'hono';
 import { PrismaClient } from '@prisma/client/edge';
 import { withAccelerate } from '@prisma/extension-accelerate';
 import { verify } from 'hono/jwt';
-import { viewTransition } from 'hono/css';
-
+import {
+  createBlogSchema,
+  updateBlogSchema,
+} from '@dev.salman010/medium-common';
 const blog = new Hono<{
   Bindings: {
     DATABASE_URL: string;
@@ -17,28 +19,31 @@ const blog = new Hono<{
 blog.use('*', async (c, next) => {
   const authHeaders = c.req.header('Authorization') || '';
 
-  const user = await verify(authHeaders, c.env.JWT_SECRET);
-  console.log(user);
-  if (user) {
-    c.set('userId', user.id as string);
-    await next();
-  } else {
+  try {
+    const user = await verify(authHeaders, c.env.JWT_SECRET);
+    console.log(user);
+    if (user) {
+      c.set('userId', user.id as string);
+      await next();
+    }
+  } catch (error) {
     c.status(403);
     return c.json({
       msg: 'You are not authorized',
+      error,
     });
   }
 });
 
-blog.get('/', (c) => {
-  const prisma = new PrismaClient({
-    datasourceUrl: c.env.DATABASE_URL,
-  }).$extends(withAccelerate());
-  return c.text('Hello Hono!');
-});
-
 blog.post('/', async (c) => {
   const body = await c.req.json();
+  const { success } = createBlogSchema.safeParse(body);
+  if (!success) {
+    c.status(400);
+    return c.json({
+      msg: 'Invalid request, bad input',
+    });
+  }
   const userId = c.get('userId');
   const prisma = new PrismaClient({
     datasourceUrl: c.env.DATABASE_URL,
