@@ -5,3 +5,8 @@ node_modules
 .env
 node_modules
 wrangler.jsonc
+
+
+./frontend
+.env
+node_modules
