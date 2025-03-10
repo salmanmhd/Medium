@@ -1,83 +1,125 @@
-import { SignUpSchema } from "@dev.salman010/medium-common";
-import { useState } from "react";
+import { ChangeEvent, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import InputField from "./InputField";
+
 import axios from "axios";
-function Auth({ type }: { type: "signup" | "signin" }) {
-  const [signupIntputs, setSignupInputs] = useState<SignUpSchema>({
+import { SignUpSchema } from "@dev.salman010/medium-common";
+
+export const Auth = ({ type }: { type: "signup" | "signin" }) => {
+  const navigate = useNavigate();
+  const [postInputs, setPostInputs] = useState<SignUpSchema>({
+    name: "",
     email: "",
     password: "",
-    name: "",
   });
-  const navigate = useNavigate();
+  const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
 
-  const BACKEND_ULR = import.meta.env.VITE_BACKEND_URL;
-  console.log(BACKEND_ULR);
-
-  async function handleRequest() {
-    const { email, password } = signupIntputs;
+  async function sendRequest() {
+    const { email, password } = postInputs;
     if (!email || !password) return;
-
     try {
-      const res = await axios.post(
-        `${BACKEND_ULR}/user/${type}`,
-        signupIntputs,
+      const response = await axios.post(
+        `${BACKEND_URL}/user/${type}`,
+        postInputs,
       );
-      const jwt = res.data.jwt;
+      const jwt = response.data.jwt;
       localStorage.setItem("token", jwt);
-      navigate("/blogs");
-    } catch (error) {
-      console.log(error);
+      navigate("/blog/bulk");
+    } catch (e) {
+      console.log(e);
     }
   }
 
   return (
-    <div className="flex h-screen flex-col items-center justify-center">
-      <div className="text-3xl font-bold">
-        {type === "signup" ? "Create an account" : "Login to your account"}
+    <div className="flex h-screen flex-col justify-center">
+      <div className="flex justify-center">
+        <div>
+          <div className="px-10">
+            <div className="text-3xl font-extrabold">Create an account</div>
+            <div className="text-slate-500">
+              {type === "signin"
+                ? "Don't have an account?"
+                : "Already have an account?"}
+              <Link
+                className="pl-2 underline"
+                to={type === "signin" ? "/signup" : "/signin"}
+              >
+                {type === "signin" ? "Sign up" : "Sign in"}
+              </Link>
+            </div>
+          </div>
+          <div className="pt-8">
+            {type === "signup" ? (
+              <LabelledInput
+                label="Name"
+                placeholder="John Doe"
+                onChange={(e) => {
+                  setPostInputs({
+                    ...postInputs,
+                    name: e.target.value,
+                  });
+                }}
+              />
+            ) : null}
+            <LabelledInput
+              label="Email"
+              placeholder="example@email.com"
+              onChange={(e) => {
+                setPostInputs({
+                  ...postInputs,
+                  email: e.target.value,
+                });
+              }}
+            />
+            <LabelledInput
+              label="Password"
+              type={"password"}
+              placeholder="********"
+              onChange={(e) => {
+                setPostInputs({
+                  ...postInputs,
+                  password: e.target.value,
+                });
+              }}
+            />
+            <button
+              onClick={sendRequest}
+              type="button"
+              className="mb-2 me-2 mt-8 w-full rounded-lg bg-gray-800 px-5 py-2.5 text-sm font-medium text-white hover:bg-gray-900 focus:outline-none focus:ring-4 focus:ring-gray-300 dark:border-gray-700 dark:bg-gray-800 dark:hover:bg-gray-700 dark:focus:ring-gray-700"
+            >
+              {type === "signup" ? "Sign up" : "Sign in"}
+            </button>
+          </div>
+        </div>
       </div>
-      <div className="mb-2 text-slate-500">
-        {type === "signup"
-          ? "Already have an account? "
-          : "Don't have an account? "}
-        <Link
-          to={type === "signup" ? "/signin" : "/signup"}
-          className="underline"
-        >
-          {type === "signup" ? "LogIn" : "Sign Up"}
-        </Link>
-      </div>
-      {type === "signup" && (
-        <InputField
-          labelText="Name"
-          placeholder="Enter your name"
-          onChange={(e) =>
-            setSignupInputs((input) => ({ ...input, name: e.target.value }))
-          }
-        />
-      )}
-      <InputField
-        labelText="Email"
-        placeholder="abc@example.com"
-        onChange={(e) =>
-          setSignupInputs((input) => ({ ...input, email: e.target.value }))
-        }
+    </div>
+  );
+};
+
+interface LabelledInputType {
+  label: string;
+  placeholder: string;
+  onChange: (e: ChangeEvent<HTMLInputElement>) => void;
+  type?: string;
+}
+
+function LabelledInput({
+  label,
+  placeholder,
+  onChange,
+  type,
+}: LabelledInputType) {
+  return (
+    <div>
+      <label className="mb-2 block pt-4 text-sm font-semibold text-black">
+        {label}
+      </label>
+      <input
+        onChange={onChange}
+        type={type || "text"}
+        className="block w-full rounded-lg border border-gray-300 bg-gray-50 p-2.5 text-sm text-gray-900 focus:border-blue-500 focus:ring-blue-500"
+        placeholder={placeholder}
+        required
       />
-      <InputField
-        labelText="Password"
-        placeholder="*****"
-        onChange={(e) =>
-          setSignupInputs((input) => ({ ...input, password: e.target.value }))
-        }
-      />
-      <button
-        onClick={handleRequest}
-        className="mt-4 w-72 rounded-md bg-black p-2 text-slate-100"
-      >
-        {type === "signup" ? "Sign Up" : "Sign In"}
-      </button>
     </div>
   );
 }
-
-export default Auth;

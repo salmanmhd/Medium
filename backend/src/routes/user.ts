@@ -42,13 +42,12 @@ user.post('/signup', async (c) => {
       c.env.JWT_SECRET
     );
     return c.json({
-      msg: 'Sing up successfull',
+      msg: 'Sign up successfull',
       jwt,
       res,
     });
   } catch (error) {
     console.log(`error signup: ${error}`);
-    c.status(411);
     return c.text('User already exist, use different email please');
   }
 });
